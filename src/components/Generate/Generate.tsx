@@ -183,6 +183,38 @@ export default function Generate({ content, prompt, onGenerated, onCommit, onSta
     }
   }
 
+  /* The handler below is subscribed for as long as the modal is open, so it outlives
+     the renders under it — every keystroke in the box is one — and has to reach the
+     current handleGenerate rather than the one from the render that subscribed it,
+     whose `instruction` is whatever had been typed at that point. */
+  const generateRef = useRef(handleGenerate);
+  useEffect(() => {
+    generateRef.current = handleGenerate;
+  });
+
+  /* Cmd/Ctrl+Enter sends, Escape closes. Listened for on the document rather than on
+     the box, so both keys mean the same thing wherever the focus has ended up in the
+     modal — the box, a button, nothing in particular. The board's own shortcut
+     handler answers only to Ctrl/Cmd+Z, so there is nothing here to collide with. */
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        return;
+      }
+      // Plain Enter stays a newline. This box is where a multi-line instruction gets
+      // written, and sending on Enter alone would cost one every time.
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        void generateRef.current();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
   return (
     <>
       <ActionButton tooltip={label} onClick={handleOpen}>

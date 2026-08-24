@@ -217,6 +217,19 @@ type GenerateTarget = {
   content: () => string;
   prompt: string;
   onGenerated: (next: string) => void;
+  // Called once when a run has stopped, with the text it left behind. `onGenerated`
+  // fires many times a second and never says which chunk was the last, so a card
+  // that acts on a finished rewrite rather than on the text itself — X renders its
+  // document — has no other way to know the writing is over. The final text is
+  // handed over rather than read back because the last `onGenerated` has not been
+  // through a render yet, so the card's own copy is still one chunk behind.
+  onDone?: (text: string) => void;
+  // True for the whole run and false when it stops — including the wait before the
+  // first words, which `onGenerated` cannot report because nothing has been written
+  // yet. A card that shows something of its own while it is being rewritten needs
+  // that opening stretch too: it is the one the board's own overlay is covering,
+  // and the card is what shows through it.
+  onBusy?: (busy: boolean) => void;
 };
 
 // One finished Generate run: the card's text before it, and the text it left
@@ -667,7 +680,10 @@ export default function Home() {
                 content={generate.content}
                 prompt={generate.prompt}
                 onGenerated={generate.onGenerated}
-                onCommit={(before, after) => recordGeneration(item.i, before, after)}
+                onCommit={(before, after) => {
+                  recordGeneration(item.i, before, after);
+                  generate.onDone?.(after);
+                }}
                 onStatus={(text, warning) =>
                   setGenStatus((prev) => {
                     if (!text) {
@@ -679,15 +695,16 @@ export default function Home() {
                     return { ...prev, [item.i]: { text, warning } };
                   })
                 }
-                onBusy={(busy) =>
+                onBusy={(busy) => {
+                  generate.onBusy?.(busy);
                   setGeneratingIds((prev) => {
                     if (prev.has(item.i) === busy) return prev;
                     const next = new Set(prev);
                     if (busy) next.add(item.i);
                     else next.delete(item.i);
                     return next;
-                  })
-                }
+                  });
+                }}
               />
             )}
             <Export title={displayTitle} />
