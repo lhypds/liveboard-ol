@@ -8,6 +8,5 @@
     </style>
   </defs>
   <rect width="512" height="512" fill="#ffffff"/>
-  <text x="256" y="202" fill="#111111" font-family="Fira Code Icon, monospace" font-size="100" text-anchor="middle" dominant-baseline="central">live</text>
-  <text x="256" y="310" fill="#111111" font-family="Fira Code Icon, monospace" font-size="100" text-anchor="middle" dominant-baseline="central">board</text>
+  <text x="256" y="256" fill="#111111" font-family="Fira Code Icon, monospace" font-size="260" text-anchor="middle" dominant-baseline="central">Li</text>
 </svg>
